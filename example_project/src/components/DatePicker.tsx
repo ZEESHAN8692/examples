@@ -1,17 +1,40 @@
 import React, { useState } from "react";
 
-type Props = {
-  onApply?: (range: { start: Date | null; end: Date | null }) => void;
+type Range = {
+  start: Date | null;
+  end: Date | null;
 };
 
-const RangeDatePicker: React.FC<Props> = ({ onApply }) => {
+const RangeDatePicker: React.FC = () => {
   const [show, setShow] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
 
+  const [appliedRange, setAppliedRange] = useState<Range>({
+    start: null,
+    end: null,
+  });
+
   const days = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+
+  const formatDate = (date: Date | null) => {
+    if (!date) return "";
+    return date.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+    });
+  };
+
+  const getDisplayText = () => {
+    if (appliedRange.start && appliedRange.end) {
+      return `${formatDate(appliedRange.start)} - ${formatDate(
+        appliedRange.end
+      )}`;
+    }
+    return "Select Date Range";
+  };
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -38,12 +61,10 @@ const RangeDatePicker: React.FC<Props> = ({ onApply }) => {
     const clickedDate = new Date(currentDate);
     clickedDate.setDate(day);
 
-    // start select
     if (!startDate || (startDate && endDate)) {
       setStartDate(clickedDate);
       setEndDate(null);
     } else {
-      // end select
       if (clickedDate < startDate) {
         setEndDate(startDate);
         setStartDate(clickedDate);
@@ -51,15 +72,6 @@ const RangeDatePicker: React.FC<Props> = ({ onApply }) => {
         setEndDate(clickedDate);
       }
     }
-  };
-
-  const isInRange = (day: number) => {
-    if (!startDate || !endDate) return false;
-
-    const date = new Date(currentDate);
-    date.setDate(day);
-
-    return date >= startDate && date <= endDate;
   };
 
   const isSameDay = (d1: Date | null, d2: Date) => {
@@ -71,21 +83,34 @@ const RangeDatePicker: React.FC<Props> = ({ onApply }) => {
     );
   };
 
+  const isInRange = (day: number) => {
+    if (!startDate || !endDate) return false;
+
+    const date = new Date(currentDate);
+    date.setDate(day);
+
+    return date >= startDate && date <= endDate;
+  };
+
   const handleApply = () => {
+    setAppliedRange({ start: startDate, end: endDate });
     setShow(false);
-    onApply?.({ start: startDate, end: endDate });
   };
 
   const handleReset = () => {
     setStartDate(null);
     setEndDate(null);
+    setAppliedRange({ start: null, end: null });
   };
 
   const dates = getDaysInMonth(currentDate);
 
   return (
     <div style={{ position: "relative" }}>
-      <button onClick={() => setShow(!show)}>Select Date Range</button>
+      {/* Button */}
+      <button onClick={() => setShow(!show)}>
+        {getDisplayText()}
+      </button>
 
       {show && (
         <div className="calendar">
@@ -182,7 +207,6 @@ const RangeDatePicker: React.FC<Props> = ({ onApply }) => {
           padding: 8px;
           border-radius: 50%;
           cursor: pointer;
-          position: relative;
         }
 
         .cell:hover {
@@ -192,7 +216,6 @@ const RangeDatePicker: React.FC<Props> = ({ onApply }) => {
         .start, .end {
           background: #ffc107;
           font-weight: bold;
-          z-index: 2;
         }
 
         .range {
